@@ -52,9 +52,6 @@ import org.atmosphere.util.ServletContextFactory;
 import org.atmosphere.util.ServletProxyFactory;
 import org.atmosphere.util.UUIDProvider;
 import org.atmosphere.util.Version;
-import org.atmosphere.util.analytics.FocusPoint;
-import org.atmosphere.util.analytics.JGoogleAnalyticsTracker;
-import org.atmosphere.util.analytics.ModuleDetection;
 import org.atmosphere.websocket.DefaultWebSocketFactory;
 import org.atmosphere.websocket.DefaultWebSocketProcessor;
 import org.atmosphere.websocket.WebSocket;
@@ -913,7 +910,6 @@ public class AtmosphereFramework {
             asyncSupport.init(servletConfig);
             initAtmosphereHandler(servletConfig);
             configureAtmosphereInterceptor(servletConfig);
-            analytics();
 
             // http://java.net/jira/browse/ATMOSPHERE-157
             if (sc.getServletContext() != null) {
@@ -1118,80 +1114,6 @@ public class AtmosphereFramework {
                 annotationPackages.addLast(p);
             }
         }
-    }
-
-    protected void analytics() {
-        if (!config.getInitParameter(ApplicationConfig.ANALYTICS, true)) return;
-
-        final String container = getServletContext().getServerInfo();
-        Thread t = new Thread() {
-            public void run() {
-                try {
-                    logger.debug("Retrieving Atmosphere's latest version from http://async-io.org/version.html");
-                    HttpURLConnection urlConnection = (HttpURLConnection)
-                            URI.create("http://async-io.org/version.html").toURL().openConnection();
-                    urlConnection.setRequestProperty("User-Agent", "Mozilla/5.0");
-                    urlConnection.setRequestProperty("Connection", "keep-alive");
-                    urlConnection.setRequestProperty("Cache-Control", "max-age=0");
-                    urlConnection.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-                    urlConnection.setRequestProperty("Accept-Language", "en-US,en;q=0.8");
-                    urlConnection.setRequestProperty("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.3");
-                    urlConnection.setRequestProperty("If-Modified-Since", "ISO-8859-1,utf-8;q=0.7,*;q=0.3");
-                    urlConnection.setInstanceFollowRedirects(true);
-
-                    BufferedReader in = new BufferedReader(new InputStreamReader(
-                            urlConnection.getInputStream()));
-
-                    String inputLine;
-                    String newVersion = Version.getRawVersion();
-                    String clientVersion = "2.2.11";
-                    String nextMajorRelease = null;
-                    boolean nextAvailable = false;
-                    if (newVersion.indexOf("SNAPSHOT") == -1) {
-                        try {
-                            while ((inputLine = in.readLine().trim()) != null) {
-                                if (inputLine.startsWith("ATMO30_VERSION=")) {
-                                    newVersion = inputLine.substring("ATMO30_VERSION=".length());
-                                } else if (inputLine.startsWith("CLIENT3_VERSION=")) {
-                                    clientVersion = inputLine.substring("CLIENT3_VERSION=".length());
-                                    break;
-                                } else if (inputLine.startsWith("ATMO_RELEASE_VERSION=")) {
-                                    nextMajorRelease = inputLine.substring("ATMO_RELEASE_VERSION=".length());
-                                    if (nextMajorRelease.compareTo(Version.getRawVersion()) > 0
-                                            && nextMajorRelease.toLowerCase().indexOf("rc") == -1
-                                            && nextMajorRelease.toLowerCase().indexOf("beta") == -1) {
-                                        nextAvailable = true;
-                                    }
-                                }
-                            }
-                        } finally {
-                            logger.info("Latest version of Atmosphere's JavaScript Client {}", clientVersion);
-                            if (newVersion.compareTo(Version.getRawVersion()) > 0) {
-                                if (nextAvailable) {
-                                    logger.info("\n\n\tAtmosphere Framework Updates\n\tMinor available (bugs fixes): {}\n\tMajor available (new features): {}", newVersion, nextMajorRelease);
-                                } else {
-                                    logger.info("\n\n\tAtmosphere Framework Updates:\n\tMinor Update available (bugs fixes): {}", newVersion);
-                                }
-                            } else if (nextAvailable) {
-                                logger.info("\n\n\tAtmosphere Framework Updates:\n\tMajor Update available (new features): {}", nextMajorRelease);
-                            }
-                            try {
-                                in.close();
-                            } catch (IOException ex) {
-                            }
-                            urlConnection.disconnect();
-                        }
-                    }
-
-                    JGoogleAnalyticsTracker tracker = new JGoogleAnalyticsTracker(ModuleDetection.detect(), Version.getRawVersion(), "UA-31990725-1");
-                    tracker.trackSynchronously(new FocusPoint(container, new FocusPoint("Atmosphere")));
-
-                } catch (Throwable e) {
-                }
-            }
-        };
-        t.setDaemon(true);
-        t.start();
     }
 
     /**

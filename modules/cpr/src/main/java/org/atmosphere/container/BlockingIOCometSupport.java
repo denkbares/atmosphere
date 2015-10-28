@@ -83,7 +83,6 @@ public class BlockingIOCometSupport extends AsynchronousProcessor {
             if (event != null) {
                 try {
                     Class.forName(org.apache.catalina.CometEvent.class.getName());
-
                     if (org.apache.catalina.CometEvent.class.isAssignableFrom(event.getClass())) {
                         org.apache.catalina.CometEvent.class.cast(event).close();
                     }

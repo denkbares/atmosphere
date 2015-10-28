@@ -8,10 +8,10 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.atmosphere</groupId>
-    <artifactId>atmosphere-runtime</artifactId>
+    <artifactId>atmosphere-runtime-nogoogle</artifactId>
     <packaging>bundle</packaging>
     <version>3.0.0-SNAPSHOT</version>
-    <name>atmosphere-runtime</name>
+    <name>atmosphere-runtime-nogoogle</name>
     <url>https://github.com/Atmosphere/atmosphere</url>
     <build>
         <defaultGoal>install</defaultGoal>
